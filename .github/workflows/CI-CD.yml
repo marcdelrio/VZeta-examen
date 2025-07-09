@@ -20,3 +20,19 @@ jobs:
         run: |
           docker build -t marcdelrio/examen-infraestructura .
           docker push marcdelrio/examen-infraestructura
+
+      - name: Desplegar en EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.VOCKEY }}
+          port: 22
+          timeout: 30s
+          command_timeout: 10m
+          script: |
+            echo "${{ secrets.DOCKERTOKEN }}" | sudo docker login -u marcdelrio --password-stdin
+            sudo docker pull marcdelrio/examen-infraestructura
+            sudo docker stop app || true
+            sudo docker rm app || true
+            sudo docker run -d --name app -p 80:80 marcdelrio/examen-infraestructura
