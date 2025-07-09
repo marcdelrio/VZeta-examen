@@ -18,5 +18,5 @@ jobs:
 
       - name: Build y Push imagen
         run: |
-          docker build -t marcdelrio/mi-web-nginx .
-          docker push marcdelrio/mi-web-nginx
+          docker build -t marcdelrio/examen-infraestructura .
+          docker push marcdelrio/examen-infraestructura
