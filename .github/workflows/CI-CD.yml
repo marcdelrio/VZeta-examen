@@ -20,3 +20,36 @@ jobs:
         run: |
           docker build -t marcdelrio/vzeta-examen .
           docker push marcdelrio/vzeta-examen
+
+      - name: Desplegar en EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.VOCKEY }}
+          port: 22
+          timeout: 30s
+          command_timeout: 10m
+          script: |
+            # 1. Login a DockerHub
+            echo "${{ secrets.DOCKERTOKEN }}" | sudo docker login -u marcdelrio --password-stdin
+
+            # 2. Prepara carpeta persistente en el host
+            HOST_DIR="/home/ec2-user/app-data"
+            mkdir -p $HOST_DIR
+            # Si no existe un index, créalo una vez
+            if [ ! -f $HOST_DIR/index.html ]; then
+              echo "<h1>¡Contenido persistente creado por CI/CD!</h1>" > $HOST_DIR/index.html
+            fi
+
+            # 3. Actualiza el contenedor
+            sudo docker stop app || true
+            sudo docker rm app  || true
+            sudo docker pull marcdelrio/vzeta-examen
+
+            # 4. Ejecuta el contenedor montando el directorio persistente
+            sudo docker run -d \
+              --name app \
+              -p 80:80 \
+              -v $HOST_DIR:/usr/share/nginx/html \
+              marcdelrio/vzeta-examen
